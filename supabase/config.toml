@@ -1,4 +1,5 @@
-project_id = "ziedhxuwgpufbgdzkebx"
+project_id = "jqzqhoiqdcyovpfvbuct"
 
 [functions.sync-coins]
 verify_jwt = false
+schedule = "0 * * * *"
