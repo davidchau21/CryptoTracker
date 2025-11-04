@@ -1,0 +1,4 @@
+project_id = "ziedhxuwgpufbgdzkebx"
+
+[functions.sync-coins]
+verify_jwt = false
