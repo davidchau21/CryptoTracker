@@ -31,7 +31,3 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
