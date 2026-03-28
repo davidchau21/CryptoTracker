@@ -73,8 +73,45 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply font-body bg-[#f8fafc] text-[#0d121c] dark:bg-[#0f172a] dark:text-white bg-fixed;
+    background-image: 
+      radial-gradient(at 40% 20%, hsla(266, 68%, 88%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(199, 78%, 85%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(312, 65%, 88%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(249, 75%, 90%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(188, 70%, 85%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsla(288, 65%, 90%, 0.6) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, hsla(333, 75%, 92%, 0.6) 0px, transparent 50%);
   }
+}
+
+.dark body {
+  background-image: 
+    radial-gradient(at 13% 18%, hsla(253, 56%, 27%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 89% 10%, hsla(220, 69%, 25%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 20% 86%, hsla(319, 59%, 22%, 0.5) 0px, transparent 50%),
+    radial-gradient(at 88% 88%, hsla(266, 55%, 20%, 0.5) 0px, transparent 50%);
+}
+
+.bg-mesh-dynamic {
+  /* Using body directly to maintain bg-fixed globally */
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.text-glow-success {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+.text-glow-danger {
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
 }
 
 .positive-change {
@@ -85,16 +122,11 @@
   @apply text-crypto-red;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Hide scrollbar completely but allow scrolling horizontal */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-::-webkit-scrollbar-track {
-  @apply bg-secondary/50;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-primary/50 rounded-full hover:bg-primary/70 transition-colors;
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

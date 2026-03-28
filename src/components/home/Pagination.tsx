@@ -1,124 +1,151 @@
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 interface PaginationControlsProps {
   currentPage: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
-  totalPages?: number;
 }
 
-const PaginationControls = ({ currentPage, onPageChange, totalPages = 10 }: PaginationControlsProps) => {
-  // Generate page numbers for pagination
-  const renderPaginationItems = () => {
-    const pageItems = [];
-    
+const PaginationControls: React.FC<PaginationControlsProps> = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}) => {
+  if (totalPages <= 1) return null;
+
+  const renderPageItems = () => {
+    const items: React.ReactNode[] = [];
+
     // Always show first page
-    pageItems.push(
-      <PaginationItem key="page-1">
-        <PaginationLink 
-          isActive={currentPage === 1} 
-          onClick={() => onPageChange(1)}
-        >
-          1
-        </PaginationLink>
-      </PaginationItem>
+    items.push(
+      <button
+        key="page-1"
+        onClick={() => onPageChange(1)}
+        className={cn(
+          "h-10 w-10 flex items-center justify-center rounded-xl font-medium transition-all duration-300 shadow-sm",
+          currentPage === 1
+            ? "bg-gradient-to-tr from-indigo-500 to-purple-500 text-white shadow-indigo-500/30 scale-105"
+            : "glass-panel hover:bg-white/80 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300",
+        )}
+      >
+        1
+      </button>,
     );
-    
-    // Calculate range of pages to show
-    let startPage = Math.max(2, currentPage - 2);
-    let endPage = Math.min(totalPages - 1, currentPage + 2);
-    
-    // Add ellipsis if needed
+
+    const startPage = Math.max(2, currentPage - 2);
+    const endPage = Math.min(totalPages - 1, currentPage + 2);
+
     if (startPage > 2) {
-      pageItems.push(
-        <PaginationItem key="ellipsis-1">
-          <span className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground">
-            ...
-          </span>
-        </PaginationItem>
+      items.push(
+        <span
+          key="ellipsis-start"
+          className="flex h-10 w-6 items-center justify-center text-gray-400"
+        >
+          ...
+        </span>,
       );
     }
-    
-    // Add page numbers
+
     for (let i = startPage; i <= endPage; i++) {
-      pageItems.push(
-        <PaginationItem key={`page-${i}`}>
-          <PaginationLink 
-            isActive={currentPage === i} 
-            onClick={() => onPageChange(i)}
-          >
-            {i}
-          </PaginationLink>
-        </PaginationItem>
+      items.push(
+        <button
+          key={`page-${i}`}
+          onClick={() => onPageChange(i)}
+          className={cn(
+            "h-10 w-10 flex items-center justify-center rounded-xl font-medium transition-all duration-300 shadow-sm",
+            currentPage === i
+              ? "bg-gradient-to-tr from-indigo-500 to-purple-500 text-white shadow-indigo-500/30 scale-105"
+              : "glass-panel hover:bg-white/80 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300",
+          )}
+        >
+          {i}
+        </button>,
       );
     }
-    
-    // Add ellipsis if needed
+
     if (endPage < totalPages - 1) {
-      pageItems.push(
-        <PaginationItem key="ellipsis-2">
-          <span className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground">
-            ...
-          </span>
-        </PaginationItem>
+      items.push(
+        <span
+          key="ellipsis-end"
+          className="flex h-10 w-6 items-center justify-center text-gray-400"
+        >
+          ...
+        </span>,
       );
     }
-    
+
     // Always show last page
-    pageItems.push(
-      <PaginationItem key={`page-${totalPages}`}>
-        <PaginationLink 
-          isActive={currentPage === totalPages} 
+    if (totalPages > 1) {
+      items.push(
+        <button
+          key={`page-${totalPages}`}
           onClick={() => onPageChange(totalPages)}
+          className={cn(
+            "h-10 w-10 flex items-center justify-center rounded-xl font-medium transition-all duration-300 shadow-sm",
+            currentPage === totalPages
+              ? "bg-gradient-to-tr from-indigo-500 to-purple-500 text-white shadow-indigo-500/30 scale-105"
+              : "glass-panel hover:bg-white/80 dark:hover:bg-gray-700/80 text-gray-700 dark:text-gray-300",
+          )}
         >
           {totalPages}
-        </PaginationLink>
-      </PaginationItem>
-    );
-    
-    return pageItems;
+        </button>,
+      );
+    }
+
+    return items;
   };
 
   return (
-    <Pagination>
-      <PaginationContent>
-        <PaginationItem>
-          {currentPage === 1 ? (
-            <span className={cn(
-              "flex items-center gap-1 pl-2.5 h-10 px-4 py-2 cursor-not-allowed opacity-50",
-              "text-sm rounded-md"
-            )}>
-              <ChevronLeft className="h-4 w-4" />
-              <span>Previous</span>
-            </span>
-          ) : (
-            <PaginationPrevious 
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            />
+    <div className="flex flex-col items-center gap-6 mt-6 pb-4">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Prev Button */}
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className={cn(
+            "flex items-center justify-center gap-1 h-10 px-4 rounded-xl font-medium transition-all duration-300 shadow-sm",
+            currentPage === 1
+              ? "glass-panel opacity-50 cursor-not-allowed text-gray-400"
+              : "glass-panel hover:bg-white/80 dark:hover:bg-gray-700/80 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:scale-105",
           )}
-        </PaginationItem>
-        
-        {renderPaginationItems()}
-        
-        <PaginationItem>
-          {currentPage === totalPages ? (
-            <span className={cn(
-              "flex items-center gap-1 pr-2.5 h-10 px-4 py-2 cursor-not-allowed opacity-50",
-              "text-sm rounded-md"
-            )}>
-              <span>Next</span>
-              <ChevronRight className="h-4 w-4" />
-            </span>
-          ) : (
-            <PaginationNext 
-              onClick={() => onPageChange(currentPage + 1)}
-            />
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Prev</span>
+        </button>
+
+        {/* Page Numbers */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {renderPageItems()}
+        </div>
+
+        {/* Next Button */}
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className={cn(
+            "flex items-center justify-center gap-1 h-10 px-4 rounded-xl font-medium transition-all duration-300 shadow-sm",
+            currentPage === totalPages
+              ? "glass-panel opacity-50 cursor-not-allowed text-gray-400"
+              : "glass-panel hover:bg-white/80 dark:hover:bg-gray-700/80 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:scale-105",
           )}
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
+        >
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-3 text-sm text-brand-secondary">
+        <span className="font-medium bg-white/40 dark:bg-black/20 px-3 py-1.5 rounded-lg border border-white/50 dark:border-white/10">
+          Page{" "}
+          <strong className="text-indigo-600 dark:text-indigo-400">
+            {currentPage}
+          </strong>{" "}
+          of <strong>{totalPages}</strong>
+        </span>
+      </div>
+    </div>
   );
 };
 

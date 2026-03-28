@@ -1,81 +1,96 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import CoinTable from "@/components/home/CoinTable";
-import PageHeader from "@/components/home/PageHeader";
 import PaginationControls from "@/components/home/Pagination";
-import MainLayout from "@/components/layout/MainLayout";
-import { fetchCoins } from "@/services/api";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import MainContentHeader from "@/components/dashboard/MainContentHeader";
+import {
+  fetchCoins,
+  fetchTotalCoinsCount,
+  ITEMS_PER_PAGE,
+} from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { Coin } from "@/types";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 100;
   const { toast } = useToast();
-  
-  // Fetch coins with react-query
-  const { 
-    data: coins, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useQuery({
-    queryKey: ['coins', currentPage],
-    queryFn: () => fetchCoins(currentPage, itemsPerPage),
-    refetchInterval: 30000, // Refetch every 30 seconds
-    refetchOnWindowFocus: true
+
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ["coinsCount"],
+    queryFn: fetchTotalCoinsCount,
+    staleTime: 2 * 60 * 1000,
   });
 
-  // Handle API error with useEffect to avoid render loop
+  const {
+    data: coins,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["coins", currentPage],
+    queryFn: () => fetchCoins(currentPage, ITEMS_PER_PAGE),
+    refetchInterval: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
     if (error) {
       toast({
-        title: "Error fetching data",
-        description: "Could not load cryptocurrency data. Please try again later.",
+        title: "Lỗi tải dữ liệu",
+        description: "Không thể tải dữ liệu coin. Vui lòng thử lại.",
         variant: "destructive",
       });
     }
   }, [error, toast]);
 
-  // Search coins
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    // Reset to first page when searching
     if (query.trim() !== searchQuery.trim()) {
       setCurrentPage(1);
     }
   };
 
-  // Filtered coins based on search
-  const displayedCoins = searchQuery.trim() 
-    ? (coins || []).filter(coin => 
-        coin.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        coin.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+  const displayedCoins: Coin[] = searchQuery.trim()
+    ? (coins ?? []).filter(
+        (coin) =>
+          coin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          coin.symbol.toLowerCase().includes(searchQuery.toLowerCase()),
       )
-    : coins || [];
+    : (coins ?? []);
 
-  // Handle page navigation
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <MainLayout onSearch={handleSearch}>
-      <PageHeader onRefresh={refetch} />
-      
-      <CoinTable coins={displayedCoins} isLoading={isLoading} />
-      
-      {!searchQuery && !isLoading && (
+    <DashboardLayout onSearch={handleSearch}>
+      <MainContentHeader />
+
+      <div className="glass-panel rounded-2xl overflow-hidden shadow-lg border border-white/50 dark:border-white/10 p-1">
+        <CoinTable
+          coins={displayedCoins}
+          isLoading={isLoading}
+          currentPage={currentPage}
+          itemsPerPage={ITEMS_PER_PAGE}
+        />
+      </div>
+
+      {!searchQuery && !isLoading && totalPages > 1 && (
         <div className="mt-8">
-          <PaginationControls 
+          <PaginationControls
             currentPage={currentPage}
+            totalPages={totalPages}
             onPageChange={handlePageChange}
           />
         </div>
       )}
-    </MainLayout>
+    </DashboardLayout>
   );
 };
 
