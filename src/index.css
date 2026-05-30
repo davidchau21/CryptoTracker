@@ -73,45 +73,121 @@
   }
 
   body {
-    @apply font-body bg-[#f8fafc] text-[#0d121c] dark:bg-[#0f172a] dark:text-white bg-fixed;
+    @apply font-body bg-[#f8fafc] text-[#0d121c] dark:bg-[#090d16] dark:text-white bg-fixed relative overflow-x-hidden;
     background-image: 
-      radial-gradient(at 40% 20%, hsla(266, 68%, 88%, 0.6) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, hsla(199, 78%, 85%, 0.6) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, hsla(312, 65%, 88%, 0.6) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsla(249, 75%, 90%, 0.6) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(188, 70%, 85%, 0.6) 0px, transparent 50%),
-      radial-gradient(at 80% 100%, hsla(288, 65%, 90%, 0.6) 0px, transparent 50%),
-      radial-gradient(at 0% 0%, hsla(333, 75%, 92%, 0.6) 0px, transparent 50%);
+      radial-gradient(at 40% 20%, hsla(266, 68%, 88%, 0.45) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(199, 78%, 85%, 0.45) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(312, 65%, 88%, 0.45) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsla(249, 75%, 90%, 0.45) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(188, 70%, 85%, 0.45) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsla(288, 65%, 90%, 0.45) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, hsla(333, 75%, 92%, 0.45) 0px, transparent 50%);
+    animation: bgPulse 25s ease-in-out infinite alternate;
   }
 }
 
 .dark body {
   background-image: 
-    radial-gradient(at 13% 18%, hsla(253, 56%, 27%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 89% 10%, hsla(220, 69%, 25%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 20% 86%, hsla(319, 59%, 22%, 0.5) 0px, transparent 50%),
-    radial-gradient(at 88% 88%, hsla(266, 55%, 20%, 0.5) 0px, transparent 50%);
+    radial-gradient(at 13% 18%, hsla(253, 56%, 22%, 0.5) 0px, transparent 55%),
+    radial-gradient(at 89% 10%, hsla(220, 69%, 20%, 0.5) 0px, transparent 55%),
+    radial-gradient(at 20% 86%, hsla(319, 59%, 18%, 0.4) 0px, transparent 55%),
+    radial-gradient(at 88% 88%, hsla(266, 55%, 16%, 0.5) 0px, transparent 55%);
+  animation: bgPulseDark 25s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes bgPulseDark {
+  0% {
+    filter: hue-rotate(0deg) brightness(0.95);
+  }
+  50% {
+    filter: hue-rotate(10deg) brightness(1.05);
+  }
+  100% {
+    filter: hue-rotate(0deg) brightness(0.95);
+  }
+}
+
+/* Cyber Futuristic Grid Pattern */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -20;
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+}
+
+.dark body::before {
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
 }
 
 .bg-mesh-dynamic {
-  /* Using body directly to maintain bg-fixed globally */
+  /* Dynamic body bg animation maintains global fix */
 }
 
+/* Futuristic Premium Glassmorphism */
 .glass-panel {
   background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .dark .glass-panel {
-  background: rgba(17, 24, 39, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(13, 20, 35, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
+
+/* Cyber Glow Effects */
+.border-glow-indigo {
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+.dark .border-glow-indigo {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.border-glow-emerald {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.dark .border-glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.border-glow-rose {
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+.dark .border-glow-rose {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
 .text-glow-success {
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 .text-glow-danger {
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+.text-glow-indigo {
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
 }
 
 .positive-change {

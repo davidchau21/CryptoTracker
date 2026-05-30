@@ -1,5 +1,6 @@
 import React from "react";
 import { useTheme } from "@/providers/ThemeProvider";
+import { Link, useLocation } from "react-router-dom";
 
 interface TopHeaderProps {
   onSearch?: (query: string) => void;
@@ -7,47 +8,68 @@ interface TopHeaderProps {
 
 const TopHeader: React.FC<TopHeaderProps> = ({ onSearch }) => {
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="sticky top-0 z-50 glass-panel border-b border-border-light dark:border-border-dark px-4 md:px-6 lg:px-8 py-3 backdrop-blur-md">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-2 text-[#0d121c] dark:text-white cursor-pointer group">
-            <div className="size-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-all">
-              <span className="material-symbols-outlined">
-                currency_bitcoin
-              </span>
+          <Link to="/" className="flex items-center gap-2 text-[#0d121c] dark:text-white cursor-pointer group">
+            <div className="size-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-all">
+              CT
             </div>
             <h2 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-white dark:to-gray-200">
-              CoinHub
+              CryptoTracker
             </h2>
-          </div>
+          </Link>
           <nav className="hidden lg:flex items-center gap-6">
-            <a
-              className="text-[#0d121c] dark:text-gray-100 text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group"
-              href="#"
+            <Link
+              className={`text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group py-1 ${
+                isActive("/") ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-brand-secondary dark:text-gray-300"
+              }`}
+              to="/"
             >
-              Cryptocurrencies
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 group-hover:w-full transition-all duration-300"></span>
-            </a>
-            <a
-              className="text-brand-secondary dark:text-gray-300 text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors hover:font-semibold"
-              href="#"
+              Markets
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+            </Link>
+            <Link
+              className={`text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group py-1 ${
+                isActive("/trending") ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-brand-secondary dark:text-gray-300"
+              }`}
+              to="/trending"
             >
-              Exchanges
-            </a>
-            <a
-              className="text-brand-secondary dark:text-gray-300 text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors hover:font-semibold"
-              href="#"
+              Trending
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/trending") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+            </Link>
+            <Link
+              className={`text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group py-1 ${
+                isActive("/gainers") ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-brand-secondary dark:text-gray-300"
+              }`}
+              to="/gainers"
             >
-              NFT
-            </a>
-            <a
-              className="text-brand-secondary dark:text-gray-300 text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors hover:font-semibold"
-              href="#"
+              Gainers
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/gainers") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+            </Link>
+            <Link
+              className={`text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group py-1 ${
+                isActive("/recent") ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-brand-secondary dark:text-gray-300"
+              }`}
+              to="/recent"
             >
-              Learn
-            </a>
+              New Coins
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/recent") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+            </Link>
+            <Link
+              className={`text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group py-1 ${
+                isActive("/swap") ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-brand-secondary dark:text-gray-300"
+              }`}
+              to="/swap"
+            >
+              Swap
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/swap") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+            </Link>
           </nav>
         </div>
 

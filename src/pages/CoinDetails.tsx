@@ -75,6 +75,7 @@ const CoinDetails = () => {
                 timeRange={timeRange}
                 onTimeRangeChange={setTimeRange}
                 isLoading={isLoadingChart}
+                symbol={coinDetails?.symbol}
               />
 
               {/* About & Price Today Section */}

@@ -79,11 +79,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/30">
-                  C
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/30">
+                  CT
                 </div>
                 <span className="font-display font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
-                  CoinHub
+                  CryptoTracker
                 </span>
               </div>
               <p className="text-slate-600 dark:text-gray-400 text-sm max-w-sm mb-6 leading-relaxed">
@@ -126,7 +126,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               <ul className="space-y-3">
                 <li>
                   <a
-                    href="#"
+                    href="/"
                     className="text-sm text-slate-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                   >
                     Crypto Tracker
@@ -134,7 +134,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href="/swap"
                     className="text-sm text-slate-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                   >
                     Portfolio Manager
@@ -142,7 +142,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href="/swap"
                     className="text-sm text-slate-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                   >
                     Exchange API
@@ -150,7 +150,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href="/swap"
                     className="text-sm text-slate-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                   >
                     Wallet Connect
@@ -202,7 +202,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
           <div className="pt-8 border-t border-border-light dark:border-border-dark flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-600 dark:text-gray-400 text-sm">
-              © 2026 CoinHub. All rights reserved.
+              © {new Date().getFullYear()} CryptoTracker. All rights reserved.
             </p>
             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400">
               <span>Made with</span>

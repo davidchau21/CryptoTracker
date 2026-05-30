@@ -1,19 +1,25 @@
-
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 
 const MainNavigationMenu = () => {
   return (
     <NavigationMenu>
       <NavigationMenuList className="space-x-1">
         <NavigationMenuItem>
-          <NavigationMenuLink 
+          <NavigationMenuLink
             className="text-foreground hover:text-primary font-medium px-4 py-2 rounded-md transition-colors"
             href="/"
           >
             Cryptocurrencies
           </NavigationMenuLink>
         </NavigationMenuItem>
-        
+
         <NavigationMenuItem>
           <NavigationMenuTrigger>Exchanges</NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -28,7 +34,8 @@ const MainNavigationMenu = () => {
                       Top Crypto Exchanges
                     </div>
                     <p className="text-sm leading-tight text-muted-foreground">
-                      Compare all cryptocurrency exchanges, ranked by volume, users and traffic.
+                      Compare all cryptocurrency exchanges, ranked by volume,
+                      users and traffic.
                     </p>
                   </a>
                 </NavigationMenuLink>
@@ -36,34 +43,34 @@ const MainNavigationMenu = () => {
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        
+
         <NavigationMenuItem>
-          <NavigationMenuLink 
+          <NavigationMenuLink
             className="text-foreground hover:text-primary font-medium px-4 py-2 rounded-md transition-colors"
             href="/"
           >
             NFT
           </NavigationMenuLink>
         </NavigationMenuItem>
-        
+
         <NavigationMenuItem>
-          <NavigationMenuLink 
+          <NavigationMenuLink
             className="text-foreground hover:text-primary font-medium px-4 py-2 rounded-md transition-colors"
             href="/swap"
           >
             Swap
           </NavigationMenuLink>
         </NavigationMenuItem>
-        
+
         <NavigationMenuItem>
-          <NavigationMenuLink 
+          <NavigationMenuLink
             className="text-foreground hover:text-primary font-medium px-4 py-2 rounded-md transition-colors"
             href="/"
           >
             Portfolio
           </NavigationMenuLink>
         </NavigationMenuItem>
-        
+
         <NavigationMenuItem>
           <NavigationMenuTrigger>Products</NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -78,7 +85,8 @@ const MainNavigationMenu = () => {
                       Products
                     </div>
                     <p className="text-sm leading-tight text-muted-foreground">
-                      Explore our full suite of crypto market products and services.
+                      Explore our full suite of crypto market products and
+                      services.
                     </p>
                   </a>
                 </NavigationMenuLink>
@@ -86,9 +94,9 @@ const MainNavigationMenu = () => {
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
-        
+
         <NavigationMenuItem>
-          <NavigationMenuLink 
+          <NavigationMenuLink
             className="text-foreground hover:text-primary font-medium px-4 py-2 rounded-md transition-colors"
             href="/"
           >

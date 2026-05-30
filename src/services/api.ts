@@ -26,22 +26,31 @@ interface BackendCoinsResponse {
 }
 
 // ─── Cache toàn bộ danh sách (tránh gọi lại khi chỉ đổi trang) ───────────────
-let _allCoinsCache: Coin[] | null = null;
-let _allCoinsCachedAt = 0;
-const CACHE_TTL = 2 * 60 * 1000; // 2 phút — khớp với cron backend
+// Note: We now fetch paginated results directly from the backend to optimize payload.
+// We will still keep a small cache map for fetched pages to avoid refetching during session.
+const _coinsPageCache: Record<string, { coins: Coin[]; cachedAt: number }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 phút
 
-async function fetchAllCoins(): Promise<Coin[]> {
+// ─── fetchCoins — với server-side pagination ──────────────────────────────────
+export const ITEMS_PER_PAGE = 100;
+
+export const fetchCoins = async (
+  page: number = 1,
+  perPage: number = ITEMS_PER_PAGE,
+): Promise<Coin[]> => {
+  const cacheKey = `${page}-${perPage}`;
   const now = Date.now();
-  if (_allCoinsCache && now - _allCoinsCachedAt < CACHE_TTL) {
-    return _allCoinsCache;
+  if (_coinsPageCache[cacheKey] && now - _coinsPageCache[cacheKey].cachedAt < CACHE_TTL) {
+    console.log(`Returning cached coins for page ${page} from local cache`);
+    return _coinsPageCache[cacheKey].coins;
   }
 
-  console.log("Fetching all coins from backend (Redis cache)...");
+  console.log(`Fetching coins for page ${page} (limit ${perPage}) from backend...`);
 
   try {
     const json = await apiFetch<BackendCoinsResponse>(
-      `${BACKEND_URL}/coins`,
-      "fetchAllCoins",
+      `${BACKEND_URL}/coins?page=${page}&limit=${perPage}`,
+      "fetchCoins",
     );
 
     const coins: Coin[] = (json.data?.data ?? []).map((coin: Coin) => ({
@@ -73,39 +82,42 @@ async function fetchAllCoins(): Promise<Coin[]> {
       last_updated: coin.last_updated || "",
     }));
 
-    _allCoinsCache = coins;
-    _allCoinsCachedAt = now;
-    console.log(`Cached ${coins.length} coins from backend`);
+    _coinsPageCache[cacheKey] = { coins, cachedAt: now };
     return coins;
   } catch (err) {
     console.warn("Backend unavailable, falling back to CoinGecko:", err);
     // Fallback CoinGecko nếu backend down
     const fallback = await apiFetch<Coin[]>(
-      `${COINGECKO_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false`,
-      "fetchAllCoins-fallback",
+      `${COINGECKO_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false`,
+      "fetchCoins-fallback",
     );
-    _allCoinsCache = fallback;
-    _allCoinsCachedAt = now;
+    _coinsPageCache[cacheKey] = { coins: fallback, cachedAt: now };
     return fallback;
   }
-}
-
-// ─── fetchCoins — với client-side pagination ──────────────────────────────────
-export const ITEMS_PER_PAGE = 100;
-
-export const fetchCoins = async (
-  page: number = 1,
-  perPage: number = ITEMS_PER_PAGE,
-): Promise<Coin[]> => {
-  const all = await fetchAllCoins();
-  const start = (page - 1) * perPage;
-  return all.slice(start, start + perPage);
 };
+
+// ─── Backend status response shape ───────────────────────────────────────────
+interface BackendStatusResponse {
+  status: string;
+  data: {
+    status: string;
+    lastUpdate: string | null;
+    coinsCount: number;
+  };
+}
 
 // ─── Tổng số trang ────────────────────────────────────────────────────────────
 export const fetchTotalCoinsCount = async (): Promise<number> => {
-  const all = await fetchAllCoins();
-  return all.length;
+  try {
+    const json = await apiFetch<BackendStatusResponse>(
+      `${BACKEND_URL}/coins/status`,
+      "fetchTotalCoinsCount",
+    );
+    return json.data?.coinsCount ?? 1000;
+  } catch (err) {
+    console.warn("Backend status unavailable, using fallback coin count:", err);
+    return 1000; // Fallback mặc định là 1000 coin
+  }
 };
 
 // ─── fetchCoinDetails — nguồn: CoinGecko ─────────────────────────────────────
@@ -189,8 +201,8 @@ export const fetchCoinMarketChart = async (
 // ─── searchCoins — filter từ backend cache ────────────────────────────────────
 export const searchCoins = async (query: string): Promise<Coin[]> => {
   const lowered = query.toLowerCase();
-  const all = await fetchAllCoins();
-  return all.filter(
+  const coins = await fetchCoins(1, 100);
+  return coins.filter(
     (coin) =>
       coin.name.toLowerCase().includes(lowered) ||
       coin.symbol.toLowerCase().includes(lowered),

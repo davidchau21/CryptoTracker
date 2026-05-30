@@ -20,7 +20,7 @@ const Index = () => {
   const { data: totalCount = 0 } = useQuery({
     queryKey: ["coinsCount"],
     queryFn: fetchTotalCoinsCount,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const {
@@ -31,7 +31,7 @@ const Index = () => {
   } = useQuery({
     queryKey: ["coins", currentPage],
     queryFn: () => fetchCoins(currentPage, ITEMS_PER_PAGE),
-    refetchInterval: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
     staleTime: 60_000,
   });
