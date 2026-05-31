@@ -208,3 +208,314 @@ export const searchCoins = async (query: string): Promise<Coin[]> => {
       coin.symbol.toLowerCase().includes(lowered),
   );
 };
+
+// ─── Swap API Helpers ─────────────────────────────────────────────────────────
+export interface BackendSwapRateResponse {
+  status: string;
+  data: {
+    rate: number;
+    fromPrice: number;
+    toPrice: number;
+  };
+}
+
+export interface BackendSwapTx {
+  id?: string;
+  address: string;
+  fromToken: string;
+  toToken: string;
+  fromAmount: string;
+  toAmount: string;
+  hash: string;
+  createdAt?: string;
+  timestamp?: string;
+}
+
+export interface BackendSwapHistoryResponse {
+  status: string;
+  data: BackendSwapTx[];
+}
+
+export const fetchSwapRate = async (
+  from: string,
+  to: string,
+): Promise<{ rate: number; fromPrice: number; toPrice: number }> => {
+  try {
+    const json = await apiFetch<BackendSwapRateResponse>(
+      `${BACKEND_URL}/swap/rate?from=${from}&to=${to}`,
+      "fetchSwapRate",
+    );
+    return json.data;
+  } catch (err) {
+    console.warn("Backend rate failed, calculating locally:", err);
+    // Simple local conversion fallback
+    const fallbackPrices: Record<string, number> = {
+      ETH: 3500,
+      BTC: 65000,
+      USDT: 1.0,
+      USDC: 1.0,
+      BNB: 580,
+      SOL: 150,
+    };
+    const fromPrice = fallbackPrices[from.toUpperCase()] ?? 1.0;
+    const toPrice = fallbackPrices[to.toUpperCase()] ?? 1.0;
+    return {
+      rate: fromPrice / toPrice,
+      fromPrice,
+      toPrice,
+    };
+  }
+};
+
+export const postSwapTransaction = async (data: {
+  address: string;
+  fromToken: string;
+  toToken: string;
+  fromAmount: string;
+  toAmount: string;
+  hash: string;
+}): Promise<BackendSwapTx> => {
+  const res = await fetch(`${BACKEND_URL}/swap`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to save swap on backend: HTTP ${res.status}`);
+  }
+  const json = await res.json() as { data: BackendSwapTx };
+  return json.data;
+};
+
+export const fetchSwapHistory = async (
+  address: string,
+): Promise<BackendSwapTx[]> => {
+  try {
+    const json = await apiFetch<BackendSwapHistoryResponse>(
+      `${BACKEND_URL}/swap/history?address=${address}`,
+      "fetchSwapHistory",
+    );
+    return json.data ?? [];
+  } catch (err) {
+    console.warn("Failed to fetch swap history from backend, falling back to empty:", err);
+    return [];
+  }
+};
+
+// ─── Price Alerts API Helpers ──────────────────────────────────────────────────
+export interface PriceAlert {
+  _id: string;
+  userId: string;
+  symbol: string;
+  targetPrice: number;
+  condition: "above" | "below";
+  isTriggered: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendAlertsResponse {
+  status: string;
+  data: PriceAlert[];
+}
+
+export const fetchPriceAlerts = async (token: string): Promise<PriceAlert[]> => {
+  const res = await fetch(`${BACKEND_URL}/alerts`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch price alerts: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as BackendAlertsResponse;
+  return json.data ?? [];
+};
+
+export const createPriceAlert = async (
+  token: string,
+  data: { symbol: string; targetPrice: number; condition: "above" | "below" },
+): Promise<PriceAlert> => {
+  const res = await fetch(`${BACKEND_URL}/alerts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? `Failed to create price alert: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { data: PriceAlert };
+  return json.data;
+};
+
+export const deletePriceAlert = async (token: string, id: string): Promise<boolean> => {
+  const res = await fetch(`${BACKEND_URL}/alerts/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete price alert: HTTP ${res.status}`);
+  }
+  return true;
+};
+
+// ─── Notifications API Helpers ──────────────────────────────────────────────────
+export interface Notification {
+  _id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: "alert" | "swap" | "system";
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendNotificationsResponse {
+  status: string;
+  data: Notification[];
+}
+
+export const fetchNotifications = async (token: string): Promise<Notification[]> => {
+  const res = await fetch(`${BACKEND_URL}/notifications`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch notifications: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as BackendNotificationsResponse;
+  return json.data ?? [];
+};
+
+export const markAllNotificationsAsRead = async (token: string): Promise<boolean> => {
+  const res = await fetch(`${BACKEND_URL}/notifications/read-all`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to mark notifications as read: HTTP ${res.status}`);
+  }
+  return true;
+};
+
+// ─── Quests & Token API Helpers ────────────────────────────────────────────────
+export interface QuestProgress {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  rewardAmount: number;
+  status: "pending" | "completed" | "claimed";
+  completedAt: string | null;
+  claimedAt: string | null;
+  txHash: string | null;
+  userWalletAddress: string | null;
+}
+
+export interface TokenInfo {
+  name: string;
+  symbol: string;
+  totalSupply: string;
+  contractAddress: string;
+  isSimulation: boolean;
+}
+
+export const fetchUserQuests = async (token: string): Promise<QuestProgress[]> => {
+  const res = await fetch(`${BACKEND_URL}/quests`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch user quests: HTTP ${res.status}`);
+  }
+  const json = await res.json() as { status: string; data: QuestProgress[] };
+  return json.data ?? [];
+};
+
+export const triggerDailyCheckin = async (token: string): Promise<{ success: boolean; message: string; progress: any }> => {
+  const res = await fetch(`${BACKEND_URL}/quests/daily-checkin`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? `Failed to perform daily check-in: HTTP ${res.status}`);
+  }
+  const json = await res.json() as { status: string; data: any };
+  return json.data;
+};
+
+export const claimQuestReward = async (
+  token: string,
+  questKey: string,
+  walletAddress: string,
+): Promise<{ success: boolean; message: string; txHash: string }> => {
+  const res = await fetch(`${BACKEND_URL}/quests/claim/${questKey}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ walletAddress }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? `Failed to claim reward: HTTP ${res.status}`);
+  }
+  const json = await res.json() as { status: string; data: any };
+  return json.data;
+};
+
+export const withdrawAccumulatedRewards = async (
+  token: string,
+  walletAddress: string,
+): Promise<{ success: boolean; message: string; amount: number; txHash: string }> => {
+  const res = await fetch(`${BACKEND_URL}/quests/withdraw`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ walletAddress }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? `Failed to withdraw rewards: HTTP ${res.status}`);
+  }
+  const json = await res.json() as { status: string; data: any };
+  return json.data;
+};
+
+export const fetchTokenInfo = async (): Promise<TokenInfo> => {
+  const res = await fetch(`${BACKEND_URL}/token/info`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch token info: HTTP ${res.status}`);
+  }
+  const json = await res.json() as { status: string; data: TokenInfo };
+  return json.data;
+};
+
+export const fetchTokenBalance = async (address: string): Promise<string> => {
+  const res = await fetch(`${BACKEND_URL}/token/balance/${address}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch token balance: HTTP ${res.status}`);
+  }
+  const json = await res.json() as { status: string; data: string };
+  return json.data ?? "0.00";
+};
+
+
+

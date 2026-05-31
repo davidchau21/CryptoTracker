@@ -1,93 +1,294 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useWallet } from "@/providers/WalletProvider";
+import { fetchTokenBalance } from "@/services/api";
+import { toast } from "sonner";
 
 const RightSidebar: React.FC = () => {
+  const { 
+    isConnected, 
+    address, 
+    disconnect, 
+    connect, 
+    chain, 
+    tokens, 
+    nativeBalance, 
+    isLoadingTokens, 
+    walletProviderName 
+  } = useWallet();
+
+  const [ctkBalance, setCtkBalance] = useState("0.0000");
+
+  // Asynchronously query the on-chain CTK balance for the connected address
+  useEffect(() => {
+    const loadCtkBalance = async () => {
+      if (isConnected && address) {
+        try {
+          const bal = await fetchTokenBalance(address);
+          setCtkBalance(bal);
+        } catch (e) {
+          console.warn("Failed to load CTK balance in RightSidebar:", e);
+        }
+      } else {
+        setCtkBalance("0.0000");
+      }
+    };
+
+    loadCtkBalance();
+    const interval = setInterval(loadCtkBalance, 15000); // Refresh every 15 seconds
+    return () => clearInterval(interval);
+  }, [isConnected, address]);
+
+  // Shorten wallet address for display
+  const shortenedAddress = address 
+    ? `${address.slice(0, 6)}...${address.slice(-4)}` 
+    : "";
+
+  // Switch network on MetaMask or Trust Wallet
+  const handleNetworkSwitch = async (targetChainId: number) => {
+    const ethereum = window.ethereum;
+    if (!ethereum && walletProviderName !== "sandbox") {
+      toast.error("Không tìm thấy ví Web3 injected.");
+      return;
+    }
+
+    const hexChainId = `0x${targetChainId.toString(16)}`;
+
+    try {
+      const provider = walletProviderName === "trustwallet" 
+        ? (window.trustwallet || ethereum) 
+        : ethereum;
+
+      await provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: hexChainId }],
+      });
+      toast.success("Chuyển mạng thành công!");
+    } catch (switchError: any) {
+      if (switchError.code === 4902) {
+        // Network needs to be added
+        try {
+          const chainDetails = targetChainId === 11155111 ? {
+            chainId: hexChainId,
+            chainName: "Sepolia Testnet",
+            nativeCurrency: { name: "SepoliaETH", symbol: "ETH", decimals: 18 },
+            rpcUrls: ["https://rpc2.sepolia.org"],
+            blockExplorerUrls: ["https://sepolia.etherscan.io"]
+          } : targetChainId === 97 ? {
+            chainId: hexChainId,
+            chainName: "BSC Testnet",
+            nativeCurrency: { name: "tBNB", symbol: "tBNB", decimals: 18 },
+            rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545"],
+            blockExplorerUrls: ["https://testnet.bscscan.com"]
+          } : targetChainId === 31337 ? {
+            chainId: hexChainId,
+            chainName: "Hardhat Localhost",
+            nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+            rpcUrls: ["http://127.0.0.1:8545"],
+            blockExplorerUrls: ["http://127.0.0.1:8545"]
+          } : targetChainId === 137 ? {
+            chainId: hexChainId,
+            chainName: "Polygon Mainnet",
+            nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+            rpcUrls: ["https://polygon-rpc.com"],
+            blockExplorerUrls: ["https://polygonscan.com"]
+          } : targetChainId === 56 ? {
+            chainId: hexChainId,
+            chainName: "Binance Smart Chain",
+            nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+            rpcUrls: ["https://bsc-dataseed.binance.org"],
+            blockExplorerUrls: ["https://bscscan.com"]
+          } : null;
+
+          if (chainDetails) {
+            const provider = walletProviderName === "trustwallet" ? (window.trustwallet || ethereum) : ethereum;
+            await provider.request({
+              method: "wallet_addEthereumChain",
+              params: [chainDetails],
+            });
+            toast.success("Đã thêm mạng và chuyển đổi thành công!");
+          }
+        } catch (addError: any) {
+          console.error("Failed to add network:", addError);
+          toast.error("Không thể thêm mạng mới vào ví.");
+        }
+      } else {
+        toast.error("Không thể chuyển mạng.");
+      }
+    }
+  };
+
+  // Get active chain name
+  const getChainName = () => {
+    switch (chain) {
+      case 1: return "Ethereum Mainnet";
+      case 56: return "Binance Smart Chain";
+      case 97: return "BSC Testnet";
+      case 31337: return "Hardhat Localhost";
+      case 137: return "Polygon MATIC";
+      case 11155111: return "Sepolia Testnet";
+      default: return "Chưa xác định";
+    }
+  };
+
+  // Get native coin symbol depending on active chain
+  const getNativeSymbol = () => {
+    switch (chain) {
+      case 56: return "BNB";
+      case 97: return "tBNB";
+      case 31337: return "ETH";
+      case 137: return "MATIC";
+      case 11155111: return "SepoliaETH";
+      default: return "ETH";
+    }
+  };
+
   return (
     <>
+      {/* ─── WEB3 PORTFOLIO ASSET MANAGEMENT WIDGET ──────────────────────────────── */}
       <div className="glass-panel rounded-2xl p-6 shadow-lg shadow-indigo-500/5 border border-white/50 dark:border-white/10 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -z-10 -mr-16 -mt-16"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl -z-10 -ml-12 -mb-12"></div>
-        <div className="flex justify-between items-center mb-5">
-          <h3 className="font-bold text-lg text-[#0d121c] dark:text-white">
-            Quick Exchange
-          </h3>
-          <span className="material-symbols-outlined text-brand-secondary hover:text-indigo-500 transition-colors cursor-pointer">
-            settings
-          </span>
-        </div>
-        <div className="space-y-2">
-          <div className="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-white/50 dark:border-gray-700/50 backdrop-blur-sm">
-            <div className="flex justify-between text-xs text-brand-secondary mb-2 font-medium">
-              <span>Sell</span>
-              <span>Balance: 2,403.20</span>
+
+        {!isConnected ? (
+          /* Disconnected CTA State */
+          <div className="text-center py-6">
+            <div className="size-14 bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-500">
+              <span className="material-symbols-outlined text-[32px]">account_balance_wallet</span>
             </div>
-            <div className="flex justify-between items-center">
-              <input
-                className="bg-transparent border-none p-0 text-2xl font-bold w-full focus:ring-0 text-[#0d121c] dark:text-white placeholder-gray-400"
-                placeholder="0.00"
-                type="number"
-                defaultValue="1000"
-              />
-              <div className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer border border-gray-100 dark:border-gray-600 hover:shadow-md transition-shadow">
-                <img
-                  className="size-5 rounded-full"
-                  alt="USDT icon"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwEXYT7aiFgeqlIbK5uBUOtGZ5qlp34VmdQIzYzNizD9UubMWk_TxMYKKiDyKRQsl5VcfCPytjEXErrQawp2igm3N-89SLVDq7R-QCXEgnxQYoRzO-CBfMfsNJ85iDOADhVtc1qGLFrpTgONwjPd_Rje3QZheFAZ03U5jbaDZlMMcC3NtzVrSmAIjQeUlxhI6ynhZc2XAhfteV696TYwe8XLopUFsb0iHHA1DkMqbivI6Dd5qtsvDglzQdEViMfdJeg4fhM_AVp4I"
-                />
-                <span className="font-bold text-sm text-[#0d121c] dark:text-white">
-                  USDT
-                </span>
-                <span className="material-symbols-outlined text-[18px] text-gray-500">
-                  expand_more
-                </span>
+            <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2">Quản Lý Tài Sản Web3</h3>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mb-5 leading-relaxed max-w-[220px] mx-auto">
+              Kết nối MetaMask hoặc Trust Wallet của bạn để theo dõi số dư, quản lý mạng và xem danh mục token trực tiếp.
+            </p>
+            <button
+              onClick={() => connect()}
+              className="w-full py-3 bg-gradient-to-tr from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">key</span>
+              Kết Nối Ví Web3
+            </button>
+          </div>
+        ) : (
+          /* Connected Asset Management State */
+          <div className="space-y-5">
+            <div className="flex justify-between items-center pb-3.5 border-b border-slate-200/50 dark:border-slate-800/50">
+              <div className="flex items-center gap-2">
+                {walletProviderName === "trustwallet" ? (
+                  <img 
+                    src="https://cdn.iconscout.com/icon/free/png-256/free-trust-wallet-logo-icon-download-in-svg-png-gif-formats--blockchain-wallet-brand-pack-logos-icons-9578051.png?f=webp&w=256" 
+                    className="size-5 rounded-full" 
+                    alt="Trust Wallet" 
+                  />
+                ) : walletProviderName === "metamask" ? (
+                  <img 
+                    src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" 
+                    className="size-5" 
+                    alt="MetaMask" 
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-[18px] text-indigo-400">terminal</span>
+                )}
+                <span className="font-mono text-sm font-black text-slate-800 dark:text-white">{shortenedAddress}</span>
+              </div>
+              <button
+                onClick={disconnect}
+                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-xs font-bold cursor-pointer"
+                title="Ngắt kết nối ví"
+              >
+                Ngắt ví
+              </button>
+            </div>
+
+            {/* Network Swapper Dropdown */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest block">Mạng lưới Blockchain</span>
+              <select
+                value={chain || 1}
+                onChange={(e) => handleNetworkSwitch(Number(e.target.value))}
+                className="w-full px-3 py-2.5 rounded-xl bg-white/60 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-800/50 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value={1}>🌐 Ethereum Mainnet</option>
+                <option value={56}>🔶 Binance Smart Chain</option>
+                <option value={97}>🔶 BSC Testnet</option>
+                <option value={31337}>💻 Hardhat Localhost</option>
+                <option value={137}>💜 Polygon MATIC</option>
+                <option value={11155111}>🧪 Sepolia Testnet</option>
+              </select>
+            </div>
+
+            {/* Assets List */}
+            <div className="space-y-2.5">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest block">Danh Mục Tài Sản (Assets)</span>
+              
+              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                
+                {/* 1. Native Token Balance */}
+                <div className="flex justify-between items-center p-3 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-slate-200/30 dark:border-slate-800/30">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-8 rounded-lg bg-indigo-500/10 flex items-center justify-center font-bold text-xs text-indigo-500">
+                      {getNativeSymbol().substring(0,2)}
+                    </div>
+                    <div className="leading-tight text-left">
+                      <span className="block font-bold text-xs text-slate-800 dark:text-white">{getNativeSymbol()}</span>
+                      <span className="text-[9px] text-slate-500 dark:text-gray-400">Đồng mặc định mạng</span>
+                    </div>
+                  </div>
+                  <span className="font-mono text-sm font-extrabold text-slate-800 dark:text-white">
+                    {parseFloat(nativeBalance).toFixed(4)}
+                  </span>
+                </div>
+
+                {/* 2. CTK Token Balance */}
+                <div className="flex justify-between items-center p-3 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-slate-200/30 dark:border-slate-800/30">
+                  <div className="flex items-center gap-2.5">
+                    <img 
+                      src="https://cryptologos.cc/logos/ethereum-eth-logo.png" 
+                      className="size-8 p-1 bg-purple-500/10 rounded-lg" 
+                      alt="" 
+                    />
+                    <div className="leading-tight text-left">
+                      <span className="block font-bold text-xs text-slate-800 dark:text-white">CTK</span>
+                      <span className="text-[9px] text-slate-500 dark:text-gray-400">CryptoTracker Reward</span>
+                    </div>
+                  </div>
+                  <span className="font-mono text-sm font-extrabold text-indigo-500 dark:text-indigo-400">
+                    {parseFloat(ctkBalance).toFixed(4)}
+                  </span>
+                </div>
+
+                {/* 3. Other Moralis ERC20 Tokens */}
+                {tokens.filter(t => t.symbol !== "CTK").map((t) => (
+                  <div key={t.symbol} className="flex justify-between items-center p-3 rounded-xl bg-white/40 dark:bg-slate-900/40 border border-slate-200/30 dark:border-slate-800/30">
+                    <div className="flex items-center gap-2.5">
+                      {t.icon ? (
+                        <img src={t.icon} className="size-8 rounded-lg" alt="" />
+                      ) : (
+                        <div className="size-8 rounded-lg bg-indigo-500/10 flex items-center justify-center font-bold text-xs text-indigo-500">
+                          {t.symbol.substring(0, 2)}
+                        </div>
+                      )}
+                      <div className="leading-tight text-left">
+                        <span className="block font-bold text-xs text-slate-800 dark:text-white truncate max-w-[80px]">{t.symbol}</span>
+                        <span className="text-[9px] text-slate-500 dark:text-gray-400 truncate max-w-[80px]">{t.name}</span>
+                      </div>
+                    </div>
+                    <span className="font-mono text-sm font-extrabold text-slate-800 dark:text-white">
+                      {parseFloat(t.balance).toFixed(4)}
+                    </span>
+                  </div>
+                ))}
+
+                {isLoadingTokens && (
+                  <div className="text-center py-2">
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full"></span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex justify-center -my-3 relative z-10">
-            <div className="bg-indigo-50 dark:bg-gray-700 p-2 rounded-xl border-2 border-white dark:border-gray-800 shadow-sm cursor-pointer hover:bg-indigo-100 dark:hover:bg-gray-600 transition-colors group">
-              <span className="material-symbols-outlined text-indigo-500 group-hover:rotate-180 transition-transform duration-300">
-                swap_vert
-              </span>
-            </div>
-          </div>
-          <div className="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-white/50 dark:border-gray-700/50 backdrop-blur-sm">
-            <div className="flex justify-between text-xs text-brand-secondary mb-2 font-medium">
-              <span>Buy</span>
-              <span>Est.</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <input
-                className="bg-transparent border-none p-0 text-2xl font-bold w-full focus:ring-0 text-[#0d121c] dark:text-white placeholder-gray-400"
-                placeholder="0.00"
-                type="number"
-                defaultValue="0.5402"
-              />
-              <div className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer border border-gray-100 dark:border-gray-600 hover:shadow-md transition-shadow">
-                <img
-                  className="size-5 bg-white rounded-full p-0.5"
-                  alt="ETH icon"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbV0Fslk2aKOjidkQsYiICvImTlgPtpqKFJ7fPr_wRYa9knOclrxCWMaO3iMgfQ9HY_vp7krYm1kRZ4sbCC6Jsbkiqml8BUQyZb5oic6XBg8kRUtgGtIfIYXJBwCmzYbKul6XNQSi3e2kS4AYuOkcB6uM1yjw0MNqyfkpBEu3DU9WBspLEwKgmVgmERpIHjmUIp9pL3LVq_5qxk53O-I1pbV8HXviXIp293n9wChXmalg8DOZtKTv1pr73NpTVogIWs5ejSzzYbvQ"
-                />
-                <span className="font-bold text-sm text-[#0d121c] dark:text-white">
-                  ETH
-                </span>
-                <span className="material-symbols-outlined text-[18px] text-gray-500">
-                  expand_more
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <button className="w-full mt-5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 flex justify-center items-center gap-2 transform active:scale-95">
-          <span className="material-symbols-outlined text-[20px]">
-            currency_exchange
-          </span>
-          Swap Now
-        </button>
-        <p className="text-xs text-center text-brand-secondary mt-3 bg-white/30 dark:bg-black/20 py-1 rounded-md mx-auto w-fit px-3">
-          1 USDT = 0.00054 ETH • Gas: $4.20
-        </p>
+        )}
       </div>
 
+      {/* ─── LATEST CRYPTO NEWS ──────────────────────────────────────────────────── */}
       <div className="glass-panel rounded-2xl p-6 shadow-lg border border-white/50 dark:border-white/10">
         <div className="flex justify-between items-center mb-5">
           <h3 className="font-bold text-lg text-[#0d121c] dark:text-white">
@@ -152,6 +353,7 @@ const RightSidebar: React.FC = () => {
         </div>
       </div>
 
+      {/* ─── LIVE DISCUSSIONS ────────────────────────────────────────────────────── */}
       <div className="glass-panel rounded-2xl p-6 shadow-lg border border-white/50 dark:border-white/10">
         <div className="flex justify-between items-center mb-5">
           <h3 className="font-bold text-lg text-[#0d121c] dark:text-white">
