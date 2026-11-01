@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 
 // Polyfill for Node.js global objects needed by Moralis
 if (typeof window !== 'undefined') {
-  // @ts-ignore
   window.global = window;
 }
 
@@ -64,13 +63,13 @@ const chains: Chain[] = [
     name: 'Hardhat Localhost',
     rpcUrl: 'http://127.0.0.1:8545',
     currency: 'ETH',
-    explorerUrl: 'http://127.0.0.1:8545',
+    explorerUrl: '',
     chainId: 31337
   }
 ];
 
-// Initialize Moralis
-const MORALIS_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjQ4NGFmMDk3LTQ3ZTEtNDcxOS1iODcxLTYwNGY1MzZlMjk4ZSIsIm9yZ0lkIjoiNDQzNjkzIiwidXNlcklkIjoiNDU2NTA0IiwidHlwZUlkIjoiMGIxM2Y0N2MtYTc1YS00OTIwLWIyMzItZGVhZWNmYzUwMjA1IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NDU1NDY5ODQsImV4cCI6NDkwMTMwNjk4NH0.wLzrxq9S1UZBWPAqPDcRJf6wl6u25TQyHIeYMa6wPA0";
+// Initialize Moralis from environment variable
+const MORALIS_API_KEY = import.meta.env.VITE_MORALIS_API_KEY || "";
 
 export interface WalletToken {
   symbol: string;
@@ -84,12 +83,13 @@ interface WalletContextType {
   isConnected: boolean;
   address?: string;
   disconnect: () => void;
-  connect: (walletType?: "metamask" | "trustwallet" | "sandbox") => Promise<void>;
+  connect: (walletType?: "metamask" | "trustwallet" | "sandbox" | any) => Promise<void>;
   chain?: number;
   tokens: WalletToken[];
   nativeBalance: string;
   isLoadingTokens: boolean;
   refetchBalances: () => Promise<void>;
+  switchNetwork: (targetChainId: number) => Promise<boolean>;
   walletProviderName?: string; // "metamask" | "trustwallet" | "sandbox"
 }
 
@@ -100,7 +100,8 @@ const WalletContext = createContext<WalletContextType>({
   tokens: [],
   nativeBalance: "0.00",
   isLoadingTokens: false,
-  refetchBalances: async () => {}
+  refetchBalances: async () => {},
+  switchNetwork: async () => false
 });
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -170,6 +171,55 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     checkConnection();
   }, [hasInitialized]);
+
+  // Synchronize state with wallet provider events (MetaMask / Trust Wallet)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.ethereum) return;
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (walletProviderName === "sandbox") return;
+      if (!accounts || accounts.length === 0) {
+        disconnect();
+      } else {
+        setAddress(accounts[0]);
+        setIsConnected(true);
+        const stored = localStorage.getItem('walletconnect');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            parsed.accounts = accounts;
+            localStorage.setItem('walletconnect', JSON.stringify(parsed));
+          } catch {
+            // ignore JSON parse error
+          }
+        }
+      }
+    };
+
+    const handleChainChanged = (hexChainId: string) => {
+      if (walletProviderName === "sandbox") return;
+      const numChainId = parseInt(hexChainId, 16);
+      setChain(numChainId);
+      const stored = localStorage.getItem('walletconnect');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          parsed.chainId = numChainId;
+          localStorage.setItem('walletconnect', JSON.stringify(parsed));
+        } catch {
+          // ignore JSON parse error
+        }
+      }
+    };
+
+    window.ethereum.on?.('accountsChanged', handleAccountsChanged);
+    window.ethereum.on?.('chainChanged', handleChainChanged);
+
+    return () => {
+      window.ethereum?.removeListener?.('accountsChanged', handleAccountsChanged);
+      window.ethereum?.removeListener?.('chainChanged', handleChainChanged);
+    };
+  }, [walletProviderName]);
 
   // Fetch Wallet Assets from Moralis EVM API
   const fetchWalletAssets = async (userAddress: string, chainId: number) => {
@@ -355,6 +405,67 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     toast.info("Đã ngắt kết nối ví Web3.");
   };
 
+  const switchNetwork = async (targetChainId: number): Promise<boolean> => {
+    if (walletProviderName === "sandbox") {
+      setChain(targetChainId);
+      toast.success(`Đã chuyển mạng Sandbox sang Chain ID ${targetChainId}`);
+      return true;
+    }
+
+    if (typeof window === 'undefined' || !window.ethereum) {
+      toast.error("Không tìm thấy ví Web3 trên trình duyệt.");
+      return false;
+    }
+
+    const targetConfig = chains.find(c => c.chainId === targetChainId);
+    const hexChainId = `0x${targetChainId.toString(16)}`;
+
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: hexChainId }],
+      });
+      setChain(targetChainId);
+      toast.success(`Đã chuyển sang mạng ${targetConfig?.name || targetChainId}`);
+      return true;
+    } catch (switchError: any) {
+      // 4902 means the chain has not been added to MetaMask
+      if (switchError.code === 4902 && targetConfig) {
+        try {
+          const chainParams: any = {
+            chainId: hexChainId,
+            chainName: targetConfig.name,
+            rpcUrls: [targetConfig.rpcUrl],
+            nativeCurrency: {
+              name: targetConfig.currency,
+              symbol: targetConfig.currency,
+              decimals: 18,
+            },
+          };
+          if (targetConfig.explorerUrl && targetConfig.explorerUrl.startsWith("https://")) {
+            chainParams.blockExplorerUrls = [targetConfig.explorerUrl];
+          }
+
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [chainParams],
+          });
+          setChain(targetChainId);
+          toast.success(`Đã thêm và chuyển sang mạng ${targetConfig.name}`);
+          return true;
+        } catch (addError) {
+          console.error("Failed to add network to wallet:", addError);
+          toast.error("Không thể thêm mạng vào ví.");
+          return false;
+        }
+      } else {
+        console.error("Failed to switch network:", switchError);
+        toast.error("Không thể chuyển mạng.");
+        return false;
+      }
+    }
+  };
+
   const handleWalletSelect = (type: "metamask" | "trustwallet" | "sandbox") => {
     connect(type);
   };
@@ -370,6 +481,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       nativeBalance,
       isLoadingTokens,
       refetchBalances,
+      switchNetwork,
       walletProviderName
     }}>
       {children}

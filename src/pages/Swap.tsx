@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { ArrowDownUp, Settings, HelpCircle, Activity, Clock, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
 import { useWallet } from "@/providers/WalletProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ import {
   fetchSwapHistory,
   fetchTokenInfo,
   fetchTokenBalance,
+  completeQuestByKey,
   BackendSwapTx,
 } from "@/services/api";
 
@@ -37,6 +39,7 @@ const POPULAR_TOKENS = [
 
 const Swap = () => {
   const { isConnected, connect, address, tokens, nativeBalance, isLoadingTokens, chain, refetchBalances } = useWallet();
+  const { token } = useAuth();
   
   // Tab controls
   const [activeMode, setActiveMode] = useState<"swap" | "transfer">("swap");
@@ -295,6 +298,11 @@ const Swap = () => {
           setShowReceipt(true);
           toast.success("Giao dịch Swap mô phỏng thành công!");
 
+          // Trigger first_swap quest completion for authenticated user
+          if (token) {
+            completeQuestByKey(token, "first_swap").catch(() => {});
+          }
+
           setFromAmount("");
           setToAmount("");
         }, 1200);
@@ -423,6 +431,12 @@ const Swap = () => {
 
       // Refetch wallet balances
       await refetchBalances();
+
+      // Trigger first_swap quest completion for authenticated user
+      if (token) {
+        completeQuestByKey(token, "first_swap").catch(() => {});
+      }
+
       setFromAmount("");
       setRecipientAddress("");
     } catch (error: any) {

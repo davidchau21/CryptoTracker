@@ -57,7 +57,11 @@ const Profile = () => {
             {/* Spinning decorative avatar boundary */}
             <div className="relative group">
               <div className="absolute -inset-1.5 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl blur opacity-70 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-spin-slow"></div>
-              <div className="relative size-16 bg-[#0c1328] rounded-2xl flex items-center justify-center text-white font-extrabold text-2xl border border-white/10 shrink-0">
+              <div className={`relative size-16 rounded-2xl flex items-center justify-center font-extrabold text-2xl border shrink-0 transition-all ${
+                isDark 
+                  ? "bg-[#0c1328] text-white border-white/10" 
+                  : "bg-gradient-to-tr from-indigo-500 to-violet-600 text-white border-indigo-400/30 shadow-lg shadow-indigo-500/20"
+              }`}>
                 {user.displayName.slice(0, 2).toUpperCase()}
               </div>
             </div>
@@ -239,10 +243,10 @@ const Profile = () => {
                 </CardContent>
               </Card>
             ) : (
-              <Card className={`overflow-hidden shadow-xl border transition-all duration-300 p-8 text-center ${isDark ? "glass-panel border-white/5 bg-[#0a0f1d]/60 text-gray-400" : "bg-white border-slate-200/80 shadow-md text-slate-500"}`}>
+              <Card className={`overflow-hidden shadow-xl border transition-all duration-300 p-8 text-center ${isDark ? "glass-panel border-white/5 bg-[#0a0f1d]/60 text-gray-400" : "bg-white border-slate-200/90 shadow-lg shadow-slate-100 text-slate-600"}`}>
                 <Wallet className="size-12 mx-auto text-indigo-500/50 mb-3" />
-                <h4 className={`font-bold text-sm mb-1 ${isDark ? "text-white" : "text-slate-800"}`}>Ví Web3 chưa kết nối</h4>
-                <p className="text-xs">Kết nối ví của bạn bằng nút phía bên phải Header để xem thông tin phân bổ tài sản tại đây.</p>
+                <h4 className={`font-bold text-base mb-1.5 ${isDark ? "text-white" : "text-slate-900"}`}>Ví Web3 chưa kết nối</h4>
+                <p className={`text-xs ${isDark ? "text-gray-400" : "text-slate-600"}`}>Kết nối ví của bạn bằng nút phía bên phải Header để xem thông tin phân bổ tài sản tại đây.</p>
               </Card>
             )}
 

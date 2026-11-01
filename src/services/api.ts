@@ -519,3 +519,42 @@ export const fetchTokenBalance = async (address: string): Promise<string> => {
 
 
 
+
+
+export const linkUserWallet = async (
+  token: string,
+  walletAddress: string,
+): Promise<{ success: boolean; message: string; walletAddress: string; progress: any }> => {
+  const res = await fetch(`${BACKEND_URL}/quests/link-wallet`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ walletAddress }),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message ?? `Failed to link wallet: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { status: string; data: any };
+  return json.data;
+};
+
+export const completeQuestByKey = async (
+  token: string,
+  questKey: string,
+): Promise<{ success: boolean; message: string; progress: any }> => {
+  const res = await fetch(`${BACKEND_URL}/quests/complete/${questKey}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message ?? `Failed to complete quest: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { status: string; data: any };
+  return json.data;
+};

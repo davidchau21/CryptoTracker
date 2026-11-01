@@ -15,7 +15,9 @@ export const CryptoTrackerTokenABI = [
   "function burn(uint256 amount) external",
   "function pause() external",
   "function unpause() external",
-  "function owner() view returns (address)"
+  "function owner() view returns (address)",
+  "function nonces(address owner) view returns (uint256)",
+  "function DOMAIN_SEPARATOR() view returns (bytes32)"
 ];
 
 /**
