@@ -1,20 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/providers/AuthProvider";
 import { useWallet } from "@/providers/WalletProvider";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Shield, Loader2, Wallet, CheckCircle2 } from "lucide-react";
+import { User, Shield, Loader2, Wallet, CheckCircle2, Trophy } from "lucide-react";
 import { toast } from "sonner";
+import { fetchStakingOverview, StakingOverview } from "@/services/api";
 
 const Profile = () => {
-  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user, token, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { address, isConnected } = useWallet();
   const { theme } = useTheme();
   const navigate = useNavigate();
 
   const isDark = theme === "dark";
+  const [stakingOverview, setStakingOverview] = useState<StakingOverview | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchStakingOverview(token, address || undefined)
+        .then(setStakingOverview)
+        .catch(() => {});
+    }
+  }, [isAuthenticated, token, address]);
 
   // Mock Wallet asset allocations for premium portfolio visual display
   const mockAssets = [
@@ -126,6 +136,62 @@ const Profile = () => {
                   <span className={`font-mono text-xs px-2.5 py-1 rounded-lg border font-bold truncate max-w-[180px] ${isConnected && address ? (isDark ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-600") : (isDark ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : "bg-rose-50 border-rose-200 text-rose-600")}`}>
                     {isConnected && address ? address : "Chưa liên kết ví"}
                   </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* VIP Tier & Staking Status Card */}
+            <Card className={`overflow-hidden shadow-xl border transition-all duration-300 ${isDark ? "glass-panel border-white/5 bg-[#0a0f1d]/60" : "bg-white border-slate-200/80 shadow-md"}`}>
+              <CardHeader className={`border-b py-4 ${isDark ? "border-white/5 bg-white/5" : "border-slate-100 bg-slate-50/50"}`}>
+                <CardTitle className={`text-sm font-bold tracking-wider uppercase flex items-center justify-between ${isDark ? "text-white" : "text-slate-900"}`}>
+                  <span className="flex items-center gap-2">
+                    <Trophy className="size-4.5 text-amber-500" />
+                    Hạng Thành Viên VIP & Staking
+                  </span>
+                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30">
+                    {stakingOverview?.vipStatus?.name || "Bronze Explorer"}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6 text-sm">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className={`p-3 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-200/70"}`}>
+                    <span className={`text-[11px] font-bold block ${isDark ? "text-gray-400" : "text-slate-500"}`}>Điểm Thực Lực</span>
+                    <span className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                      {stakingOverview?.vipStatus?.powerScore ?? 0} pts
+                    </span>
+                  </div>
+                  <div className={`p-3 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-200/70"}`}>
+                    <span className={`text-[11px] font-bold block ${isDark ? "text-gray-400" : "text-slate-500"}`}>Đang Stake</span>
+                    <span className={`text-lg font-black font-mono ${isDark ? "text-white" : "text-slate-900"}`}>
+                      {(stakingOverview?.stakedAmount ?? 0).toFixed(1)} CTK
+                    </span>
+                  </div>
+                  <div className={`p-3 rounded-xl border ${isDark ? "bg-white/5 border-white/5" : "bg-slate-50 border-slate-200/70"}`}>
+                    <span className={`text-[11px] font-bold block ${isDark ? "text-gray-400" : "text-slate-500"}`}>Phí Swap VIP</span>
+                    <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                      {stakingOverview?.vipStatus?.swapFeePercent ?? 0.3}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => navigate("/staking")}
+                    className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md transition-all cursor-pointer"
+                  >
+                    Mở Staking Vault
+                  </button>
+                  <button
+                    onClick={() => navigate("/leaderboard")}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      isDark
+                        ? "bg-white/5 border-white/10 text-gray-200 hover:bg-white/10"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    Xem Bảng Xếp Hạng
+                  </button>
                 </div>
               </CardContent>
             </Card>

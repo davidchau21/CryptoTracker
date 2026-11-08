@@ -558,3 +558,179 @@ export const completeQuestByKey = async (
   const json = (await res.json()) as { status: string; data: any };
   return json.data;
 };
+
+// ─── Staking Vault & VIP Leaderboard API Helpers ───────────────────────────────
+export type LockTier = "flexible" | "30days" | "90days";
+
+export interface StakingPoolConfig {
+  id: LockTier;
+  name: string;
+  lockDays: number;
+  baseApy: number;
+  rewardPerSecPer100Ctk: number;
+  vipMultiplierBoost: number;
+  description: string;
+}
+
+export interface VipStatusInfo {
+  powerScore: number;
+  stakedCtk: number;
+  totalQuestCtk: number;
+  swapCount: number;
+  tierId: "bronze" | "silver" | "gold" | "diamond";
+  name: string;
+  minScore: number;
+  nextTierName: string | null;
+  nextTierMinScore: number | null;
+  progressPercent: number;
+  swapFeePercent: number;
+  feeDiscountPercent: number;
+  apyMultiplier: number;
+  perks: string[];
+}
+
+export interface StakingHistoryItem {
+  action: "stake" | "unstake" | "claim" | "compound";
+  amount: number;
+  lockTier: string;
+  txHash: string | null;
+  timestamp: string;
+}
+
+export interface StakingOverview {
+  stakedAmount: number;
+  pendingRewards: number;
+  totalClaimedRewards: number;
+  lockTier: LockTier;
+  stakedAt: string | null;
+  unlockAt: string | null;
+  effectiveApy: number;
+  rewardRatePerSec: number;
+  availableToStake: number;
+  inGameBalance: number;
+  onChainBalance: number;
+  globalStats: {
+    totalValueLocked: number;
+    totalStakers: number;
+    rewardPoolRemaining: number;
+  };
+  pools: StakingPoolConfig[];
+  vipStatus: VipStatusInfo;
+  history: StakingHistoryItem[];
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  displayName: string;
+  walletAddress: string;
+  stakedCtk: number;
+  questCtk: number;
+  swapCount: number;
+  powerScore: number;
+  tierId: "bronze" | "silver" | "gold" | "diamond";
+  tierName: string;
+  isCurrentUser: boolean;
+}
+
+export interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[];
+  myRank: LeaderboardEntry | null;
+  totalParticipants: number;
+}
+
+export const fetchStakingOverview = async (
+  token: string,
+  walletAddress?: string,
+): Promise<StakingOverview> => {
+  const query = walletAddress ? `?walletAddress=${encodeURIComponent(walletAddress)}` : "";
+  const res = await fetch(`${BACKEND_URL}/staking/overview${query}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message ?? `Failed to fetch staking overview: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { status: string; data: StakingOverview };
+  return json.data;
+};
+
+export const stakeCtkTokens = async (
+  token: string,
+  data: { amount: number; lockTier?: LockTier; walletAddress?: string },
+): Promise<{ success: boolean; message: string; txHash: string; overview: StakingOverview }> => {
+  const res = await fetch(`${BACKEND_URL}/staking/stake`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message ?? `Không thể thực hiện Stake: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { status: string; data: any };
+  return json.data;
+};
+
+export const unstakeCtkTokens = async (
+  token: string,
+  data: { amount: number; walletAddress?: string },
+): Promise<{ success: boolean; message: string; txHash: string; overview: StakingOverview }> => {
+  const res = await fetch(`${BACKEND_URL}/staking/unstake`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message ?? `Không thể rút gốc Staking: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { status: string; data: any };
+  return json.data;
+};
+
+export const claimStakingRewards = async (
+  token: string,
+  data: { mode: "compound" | "wallet"; walletAddress?: string },
+): Promise<{
+  success: boolean;
+  mode: "compound" | "wallet";
+  claimedAmount: number;
+  txHash: string;
+  message: string;
+  overview: StakingOverview;
+}> => {
+  const res = await fetch(`${BACKEND_URL}/staking/claim`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message ?? `Không thể nhận lãi Staking: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { status: string; data: any };
+  return json.data;
+};
+
+export const fetchLeaderboard = async (userId?: string): Promise<LeaderboardResponse> => {
+  const query = userId ? `?userId=${encodeURIComponent(userId)}` : "";
+  const res = await fetch(`${BACKEND_URL}/staking/leaderboard${query}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch leaderboard: HTTP ${res.status}`);
+  }
+  const json = (await res.json()) as { status: string; data: LeaderboardResponse };
+  return json.data;
+};
+

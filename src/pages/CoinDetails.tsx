@@ -8,6 +8,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import CoinHeader from "@/components/coins/CoinHeader";
 import MarketStats from "@/components/coins/MarketStats";
 import ChartSection from "@/components/coins/ChartSection";
+import AiMarketCopilot from "@/components/coins/AiMarketCopilot";
 import CoinAbout from "@/components/coins/CoinAbout";
 import RightSidebarDetail from "@/components/coin-detail/RightSidebarDetail";
 
@@ -76,6 +77,13 @@ const CoinDetails = () => {
                 onTimeRangeChange={setTimeRange}
                 isLoading={isLoadingChart}
                 symbol={coinDetails?.symbol}
+              />
+
+              {/* AI Market Copilot & Technical Signals Section */}
+              <AiMarketCopilot
+                coinDetails={coinDetails}
+                chartData={chartData}
+                isLoading={isLoadingDetails || isLoadingChart}
               />
 
               {/* About & Price Today Section */}

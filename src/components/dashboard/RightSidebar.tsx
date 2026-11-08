@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useWallet } from "@/providers/WalletProvider";
 import { fetchTokenBalance } from "@/services/api";
 import { toast } from "sonner";
+import FearGreedWidget from "./FearGreedWidget";
+import OnChainRadarWidget from "./OnChainRadarWidget";
 
 const RightSidebar: React.FC = () => {
   const { 
@@ -287,6 +289,12 @@ const RightSidebar: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ─── AI MARKET SENTIMENT: FEAR & GREED INDEX ─────────────────────────────── */}
+      <FearGreedWidget />
+
+      {/* ─── LIVE ON-CHAIN & WHALE RADAR ─────────────────────────────────────────── */}
+      <OnChainRadarWidget />
 
       {/* ─── LATEST CRYPTO NEWS ──────────────────────────────────────────────────── */}
       <div className="glass-panel rounded-2xl p-6 shadow-lg border border-white/50 dark:border-white/10">

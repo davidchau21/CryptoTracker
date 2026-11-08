@@ -159,6 +159,24 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onSearch }) => {
               Quests
               <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/quests") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
             </Link>
+            <Link
+              className={`text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group py-1 ${
+                isActive("/staking") ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-brand-secondary dark:text-gray-300"
+              }`}
+              to="/staking"
+            >
+              Staking
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/staking") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+            </Link>
+            <Link
+              className={`text-sm font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors relative group py-1 ${
+                isActive("/leaderboard") ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-brand-secondary dark:text-gray-300"
+              }`}
+              to="/leaderboard"
+            >
+              Leaderboard
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${isActive("/leaderboard") ? "w-full" : "w-0 group-hover:w-full"}`}></span>
+            </Link>
 
           </nav>
         </div>
@@ -199,7 +217,11 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onSearch }) => {
                 {theme === "dark" ? "light_mode" : "dark_mode"}
               </span>
             </button>
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full transition-colors text-gray-500 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-indigo-400">
+            <button
+              onClick={() => navigate("/?filter=watchlist")}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full transition-colors text-gray-500 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400 cursor-pointer"
+              title="Xem danh sách yêu thích (Watchlist)"
+            >
               <span className="material-symbols-outlined text-[20px]">
                 star
               </span>
@@ -385,6 +407,32 @@ const TopHeader: React.FC<TopHeaderProps> = ({ onSearch }) => {
                         emoji_events
                       </span>
                       Hệ Thống Nhiệm Vụ (CTK)
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        navigate("/staking");
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-left ${isDark ? "hover:bg-white/5 text-gray-300 hover:text-white" : "hover:bg-slate-100 text-slate-600 hover:text-slate-900"}`}
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-indigo-500">
+                        savings
+                      </span>
+                      Staking Vault (Sinh Lời CTK)
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        navigate("/leaderboard");
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-left ${isDark ? "hover:bg-white/5 text-gray-300 hover:text-white" : "hover:bg-slate-100 text-slate-600 hover:text-slate-900"}`}
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-indigo-500">
+                        leaderboard
+                      </span>
+                      Bảng Xếp Hạng & VIP Tiers
                     </button>
 
                     <button

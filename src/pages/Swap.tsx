@@ -24,6 +24,8 @@ import {
   fetchTokenInfo,
   fetchTokenBalance,
   completeQuestByKey,
+  fetchStakingOverview,
+  VipStatusInfo,
   BackendSwapTx,
 } from "@/services/api";
 
@@ -57,6 +59,15 @@ const Swap = () => {
   const [liveRate, setLiveRate] = useState<number>(3500);
   const [swapHistory, setSwapHistory] = useState<BackendSwapTx[]>([]);
   const [availableTokens, setAvailableTokens] = useState<Array<{ symbol: string; name: string; icon: string; balance: string }>>([]);
+  const [vipStatus, setVipStatus] = useState<VipStatusInfo | null>(null);
+
+  useEffect(() => {
+    if (token) {
+      fetchStakingOverview(token, address || undefined)
+        .then((ov) => setVipStatus(ov.vipStatus))
+        .catch(() => {});
+    }
+  }, [token, address]);
 
   // Swap Dialog States
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -624,6 +635,27 @@ const Swap = () => {
                     <div className="flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-gray-400">
                       <span>Slippage Tolerance</span>
                       <span className="font-bold text-indigo-500 dark:text-indigo-400">{slippage}%</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/60 dark:border-white/5">
+                      <span className="font-semibold text-slate-500 dark:text-gray-400 flex items-center gap-1">
+                        Phí giao dịch ({vipStatus ? vipStatus.name : "Standard"}):
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {vipStatus && vipStatus.feeDiscountPercent > 0 && (
+                          <span className="line-through text-slate-400 text-[11px]">0.30%</span>
+                        )}
+                        <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
+                          {vipStatus ? `${vipStatus.swapFeePercent}%` : "0.30%"}
+                        </span>
+                        <a
+                          href="/staking"
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30 hover:underline"
+                        >
+                          {vipStatus && vipStatus.feeDiscountPercent > 0
+                            ? `Giảm ${vipStatus.feeDiscountPercent}%`
+                            : "Stake giảm phí"}
+                        </a>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       {["0.1", "0.5", "1.0"].map((value) => (

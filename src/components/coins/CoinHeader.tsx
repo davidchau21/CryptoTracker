@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber, formatPercentage } from "@/lib/utils";
 import { CoinDetails } from "@/types";
+import { useWatchlist } from "@/hooks/use-watchlist";
+import PriceAlertModal from "./PriceAlertModal";
 
 interface CoinHeaderProps {
   coinDetails: CoinDetails | null;
@@ -10,7 +12,12 @@ interface CoinHeaderProps {
 }
 
 const CoinHeader = ({ coinDetails, isLoading }: CoinHeaderProps) => {
-  const isPriceChangePositive = coinDetails?.price_change_percentage_24h >= 0;
+  const { isInWatchlist, toggleWatchlist } = useWatchlist();
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const isPriceChangePositive =
+    (coinDetails?.price_change_percentage_24h ?? 0) >= 0;
+  const starred = coinDetails ? isInWatchlist(coinDetails.id) : false;
 
   if (isLoading) {
     return (
@@ -40,7 +47,7 @@ const CoinHeader = ({ coinDetails, isLoading }: CoinHeaderProps) => {
         </span>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 glass-panel p-6 bg-gradient-to-r from-white/90 to-indigo-50/80 dark:from-[#131B2C]/80 dark:to-[#0F1623]/80 rounded-2xl shadow-sm border border-white/50 dark:border-white/10 relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 glass-panel p-6 bg-gradient-to-r from-white/90 to-indigo-50/80 dark:from-[#131B2C]/80 dark:to-[#0F1623]/80 rounded-2xl shadow-sm border border-slate-200/80 dark:border-white/10 relative overflow-hidden">
         {/* Glow effect */}
         <div className="absolute top-0 right-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -z-10 -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -65,15 +72,52 @@ const CoinHeader = ({ coinDetails, isLoading }: CoinHeaderProps) => {
                 Rank #{coinDetails?.market_cap_rank || "-"}
               </span>
             </div>
-            <div className="mt-2 flex items-center gap-2">
+
+            <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
               <span className="text-sm font-medium text-brand-secondary">
                 {coinDetails?.name} Price ({coinDetails?.symbol?.toUpperCase()})
               </span>
-              <button className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors group flex items-center justify-center">
-                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500 text-[18px] group-hover:text-yellow-500 dark:group-hover:text-yellow-400 transition-colors">
-                  star
-                </span>
-              </button>
+
+              {coinDetails && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleWatchlist(coinDetails.id, coinDetails.name)
+                    }
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                      starred
+                        ? "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-amber-300 dark:bg-white/5 dark:text-gray-300 dark:border-white/10"
+                    }`}
+                  >
+                    <span
+                      className={`material-symbols-outlined text-[16px] ${
+                        starred ? "text-amber-500" : ""
+                      }`}
+                      style={{
+                        fontVariationSettings: starred
+                          ? "'FILL' 1"
+                          : "'FILL' 0",
+                      }}
+                    >
+                      star
+                    </span>
+                    {starred ? "Đã lưu Watchlist" : "Lưu Watchlist"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAlertOpen(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      notifications_active
+                    </span>
+                    Đặt Cảnh Báo Giá
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -86,8 +130,8 @@ const CoinHeader = ({ coinDetails, isLoading }: CoinHeaderProps) => {
             <span
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm ${
                 isPriceChangePositive
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-500/10 dark:border-green-500/20 dark:text-green-400 dark:shadow-[0_0_10px_rgba(74,222,128,0.1)]"
-                  : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400 dark:shadow-[0_0_10px_rgba(248,113,113,0.1)]"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-500/10 dark:border-green-500/20 dark:text-green-400"
+                  : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400"
               }`}
             >
               <span className="material-symbols-outlined text-base font-bold">
@@ -100,6 +144,17 @@ const CoinHeader = ({ coinDetails, isLoading }: CoinHeaderProps) => {
           </div>
         </div>
       </div>
+
+      {coinDetails && (
+        <PriceAlertModal
+          isOpen={isAlertOpen}
+          onClose={() => setIsAlertOpen(false)}
+          coinSymbol={coinDetails.symbol}
+          coinName={coinDetails.name}
+          currentPrice={coinDetails.current_price}
+          coinImage={coinDetails.image}
+        />
+      )}
     </div>
   );
 };

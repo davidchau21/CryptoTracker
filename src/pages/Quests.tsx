@@ -390,6 +390,20 @@ const Quests: React.FC = () => {
       );
     }
 
+    if (quest.key === "first_stake") {
+      return (
+        <button
+          onClick={() => navigate("/staking")}
+          className="px-5 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-tr from-cyan-600 to-indigo-600 hover:from-cyan-700 hover:to-indigo-700 text-white shadow-lg shadow-cyan-500/20 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[18px]">
+            savings
+          </span>
+          Đến Staking Vault
+        </button>
+      );
+    }
+
     if (quest.key === "referral") {
       return (
         <button
@@ -421,6 +435,8 @@ const Quests: React.FC = () => {
         return "account_balance_wallet";
       case "first_swap":
         return "sync_alt";
+      case "first_stake":
+        return "savings";
       case "referral":
         return "group_add";
       default:

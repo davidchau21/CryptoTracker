@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +20,7 @@ import Portfolio from "./pages/Portfolio";
 import Security from "./pages/Security";
 import History from "./pages/History";
 import Quests from "./pages/Quests";
-
+import Staking from "./pages/Staking";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,8 +55,9 @@ const App = () => (
                 <Route path="/security" element={<Security />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/quests" element={<Quests />} />
+                <Route path="/staking" element={<Staking />} />
+                <Route path="/leaderboard" element={<Staking />} />
                 <Route path="*" element={<NotFound />} />
-
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
